@@ -56,5 +56,3 @@ The drone operates as a **goal-based AI agent**:
 - Autonomous agent state machine  
 - Dynamic path replanning  
 - Intelligent delivery scheduling  
-
----
