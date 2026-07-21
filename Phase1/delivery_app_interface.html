@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚁SkyLogix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .login-card h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .login-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .login-card label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .building-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin-bottom: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .building-option {
+            padding: 15px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .building-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .building-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Main App Screen */
+        .app-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .app-screen.active {
+            display: flex;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+        }
+
+        .user-building {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid white;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-panel {
+            flex: 2;
+            min-width: 0;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .category-btn {
+            padding: 15px;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .category-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .category-btn .icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .category-btn .name {
+            font-weight: bold;
+        }
+
+        .products {
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            padding: 5px;
+        }
+
+        .store-section {
+            margin-bottom: 25px;
+        }
+
+        .store-title {
+            color: #667eea;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .store-products {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .store-products {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .store-products {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .product-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            height: fit-content;
+        }
+
+        .product-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .product-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .product-card .product-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .product-card .product-name {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+
+        .product-card .product-store {
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .package-delivery-container {
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8ecff 100%);
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+
+        .package-delivery-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .package-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .package-form label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .package-form select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .package-form select:hover {
+            border-color: #667eea;
+        }
+
+        .package-form select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .package-confirm-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .package-confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .order-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .order-summary h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .order-item {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+        }
+
+        .order-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .order-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .order-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .order-queue {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 5px solid #667eea;
+            font-size: 0.9em;
+        }
+
+        .queue-item.processing {
+            border-left-color: #ffc107;
+            background: #fff9e6;
+        }
+
+        .queue-item.completed {
+            border-left-color: #28a745;
+            background: #e6f7ed;
+        }
+
+        .queue-item.failed {
+            border-left-color: #dc3545;
+            background: #ffe6e6;
+        }
+
+        .queue-item .status {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .queue-item.processing .status {
+            color: #ffc107;
+        }
+
+        .queue-item.completed .status {
+            color: #28a745;
+        }
+
+        .queue-item.failed .status {
+            color: #dc3545;
+        }
+
+        .queue-item .details {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .processing-indicator {
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <h1>🚁 Drone Delivery</h1>
+            <p>Welcome! Select your Home</p>
+            
+            <label>🏠 Select Your Building</label>
+            <div class="building-grid">
+                <div class="building-option" onclick="selectHomeBuilding('F')">F</div>
+                <div class="building-option" onclick="selectHomeBuilding('G')">G</div>
+                <div class="building-option" onclick="selectHomeBuilding('H')">H</div>
+                <div class="building-option" onclick="selectHomeBuilding('I')">I</div>
+                <div class="building-option" onclick="selectHomeBuilding('J')">J</div>
+                <div class="building-option" onclick="selectHomeBuilding('E')">E</div>
+                <div class="building-option" onclick="selectHomeBuilding('B1')">B1</div>
+                <div class="building-option" onclick="selectHomeBuilding('B2')">B2</div>
+                <div class="building-option" onclick="selectHomeBuilding('B3')">B3</div>
+                <div class="building-option" onclick="selectHomeBuilding('B4')">B4</div>
+                <div class="building-option" onclick="selectHomeBuilding('B5')">B5</div>
+                <div class="building-option" onclick="selectHomeBuilding('B6')">B6</div>
+                <div class="building-option" onclick="selectHomeBuilding('B7')">B7</div>
+                <div class="building-option" onclick="selectHomeBuilding('B8')">B8</div>
+                <div class="building-option" onclick="selectHomeBuilding('B9')">B9</div>
+                <div class="building-option" onclick="selectHomeBuilding('B10')">B10</div>
+                <div class="building-option" onclick="selectHomeBuilding('B11')">B11</div>
+                <div class="building-option" onclick="selectHomeBuilding('B12')">B12</div>
+                <div class="building-option" onclick="selectHomeBuilding('B13')">B13</div>
+                <div class="building-option" onclick="selectHomeBuilding('B14')">B14</div>
+                <div class="building-option" onclick="selectHomeBuilding('B15')">B15</div>
+                <div class="building-option" onclick="selectHomeBuilding('B16')">B16</div>
+                <div class="building-option" onclick="selectHomeBuilding('B17')">B17</div>
+                <div class="building-option" onclick="selectHomeBuilding('B18')">B18</div>
+                <div class="building-option" onclick="selectHomeBuilding('B19')">B19</div>
+                <div class="building-option" onclick="selectHomeBuilding('B20')">B20</div>
+                <div class="building-option" onclick="selectHomeBuilding('B21')">B21</div>
+            </div>
+            
+            <button class="login-btn" id="loginBtn" onclick="login()" disabled>
+                Continue to Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App Screen -->
+    <div class="app-screen" id="appScreen">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚁SkyLogix - Drone Delivery</h1>
+            <div class="user-info">
+                <span>🏠</span>
+                <span class="user-building" id="userBuilding">Building F</span>
+                <button class="logout-btn" onclick="logout()">Change Home</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel -->
+            <div class="card left-panel">
+                <h2>
+                    <span>🛒</span>
+                    Order
+                </h2>
+
+                <!-- Categories -->
+                <div class="categories">
+                    <div class="category-btn active" onclick="selectCategory('food')">
+                        <div class="icon">🍕</div>
+                        <div class="name">Food</div>
+                    </div>
+                    <div class="category-btn" onclick="selectCategory('medicine')">
+                        <div class="icon">💊</div>
+                        <div class="name">Medicine</div>
+                    </div>
+                    <div class="category-btn" onclick="selectCategory('grocery')">
+                        <div class="icon">🛒</div>
+                        <div class="name">Grocery</div>
+                    </div>
+                    <div class="category-btn" onclick="selectCategory('package')">
+                        <div class="icon">📦</div>
+                        <div class="name">Package</div>
+                    </div>
+                </div>
+
+                <!-- Products -->
+                <div class="products" id="productList"></div>
+
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <h3>📋 Order Summary</h3>
+                    <div id="orderSummary">
+                        <div style="text-align: center; color: #999;">No items selected</div>
+                    </div>
+                </div>
+
+                <!-- Place Order Button -->
+                <button class="order-btn" id="placeOrderBtn" onclick="placeOrder()" disabled>
+                    🚁 Place Order
+                </button>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="card right-panel">
+                <h2>
+                    <span>📦</span>
+                    My Deliveries
+                </h2>
+                <div class="order-queue" id="orderQueue">
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <div>No active deliveries</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+// Store Catalog - FIXED KEYS TO MATCH PYTHON
+
+const storeCatalog = {
+    food: [
+        {
+            storeName: "🍕 Pizza Palace",
+            storeKey: "B",
+            items: [
+                {name:"🍕 Margherita Pizza", store:"B"},
+                {name:"🍕 Pepperoni Pizza", store:"B"},
+                {name:"🍕 BBQ Chicken Pizza", store:"B"},
+                {name:"🍕 Veggie Pizza", store:"B"},
+                {name:"🍕 Hawaiian Pizza", store:"B"},
+                {name:"🍕 Four Cheese Pizza", store:"B"}
+            ]
+        },
+        {
+            storeName: "🍔 Burger House",
+            storeKey: "Food2",
+            items: [
+                {name:"🍔 Classic Burger", store:"Food2"},
+                {name:"🍔 Cheese Burger", store:"Food2"},
+                {name:"🍔 Chicken Burger", store:"Food2"},
+                {name:"🍔 Veggie Burger", store:"Food2"},
+                {name:"🍟 French Fries", store:"Food2"},
+                {name:"🥤 Soft Drink", store:"Food2"}
+            ]
+        },
+        {
+            storeName: "🍜 Asian Kitchen",
+            storeKey: "Food3",
+            items: [
+                {name:"🍜 Ramen Noodles", store:"Food3"},
+                {name:"🍱 Sushi Combo", store:"Food3"},
+                {name:"🍛 Curry Rice", store:"Food3"},
+                {name:"🥟 Dumplings", store:"Food3"},
+                {name:"🍚 Fried Rice", store:"Food3"},
+                {name:"🧋 Bubble Tea", store:"Food3"}
+            ]
+        }
+    ],
+
+    medicine: [
+        {
+            storeName: "💊 HealthCare Pharmacy",
+            storeKey: "C",
+            items: [
+                {name:"💊 Pain Relief", store:"C"},
+                {name:"🧪 Multivitamins", store:"C"},
+                {name:"🩹 First Aid Kit", store:"C"},
+                {name:"🌡️ Digital Thermometer", store:"C"},
+                {name:"😷 Face Masks (50pc)", store:"C"},
+                {name:"🧴 Hand Sanitizer", store:"C"}
+            ]
+        },
+        {
+            storeName: "💊 MedPlus Store",
+            storeKey: "Pharmacy2",
+            items: [
+                {name:"💊 Antibiotics", store:"Pharmacy2"},
+                {name:"🧴 Cough Syrup", store:"Pharmacy2"},
+                {name:"💉 Vitamin B12 Injection", store:"Pharmacy2"},
+                {name:"🩺 Blood Pressure Monitor", store:"Pharmacy2"},
+                {name:"👓 Eye Drops", store:"Pharmacy2"},
+                {name:"🧪 Glucose Test Kit", store:"Pharmacy2"}
+            ]
+        }
+    ],
+
+    grocery: [
+        {
+            storeName: "🛒 Fresh Mart",
+            storeKey: "D",
+            items: [
+                {name:"🥗 Fresh Vegetables", store:"D"},
+                {name:"🍎 Seasonal Fruits", store:"D"},
+                {name:"🥛 Milk (1L)", store:"D"},
+                {name:"🍞 Whole Wheat Bread", store:"D"},
+                {name:"🥚 Farm Eggs (12pc)", store:"D"},
+                {name:"🍚 Basmati Rice (5kg)", store:"D"}
+            ]
+        },
+        {
+            storeName: "🛒 SuperSave Grocery",
+            storeKey: "Grocery2",
+            items: [
+                {name:"🧂 Iodized Salt", store:"Grocery2"},
+                {name:"🧴 Cooking Oil (2L)", store:"Grocery2"},
+                {name:"🧀 Cheddar Cheese", store:"Grocery2"},
+                {name:"🥫 Canned Beans", store:"Grocery2"},
+                {name:"🍪 Chocolate Cookies", store:"Grocery2"},
+                {name:"🍯 Organic Honey", store:"Grocery2"}
+            ]
+        }
+    ]
+};
+
+// All buildings available for package delivery
+const allBuildings = ['F', 'G', 'H', 'I', 'J', 'E', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 
+                      'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B13', 'B14', 'B15', 
+                      'B16', 'B17', 'B18', 'B19', 'B20', 'B21'];
+
+
+
+let currentCategory = "food";
+let selectedProduct = null;
+let userHomeBuilding = null;
+let selectedHomeBuilding = null;
+let lastOrderStatuses = {};
+
+/* ---------- LOGIN ---------- */
+function selectHomeBuilding(building){
+    selectedHomeBuilding = building;
+    document.querySelectorAll('.building-option').forEach(btn=>btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+    document.getElementById('loginBtn').disabled = false;
+}
+
+function login(){
+    userHomeBuilding = selectedHomeBuilding;
+    localStorage.setItem('userHomeBuilding', userHomeBuilding);
+    showAppScreen();
+}
+
+function logout(){ 
+    localStorage.removeItem('userHomeBuilding');
+    location.reload(); 
+}
+
+function showAppScreen(){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').classList.add('active');
+    document.getElementById('userBuilding').textContent = `Building ${userHomeBuilding}`;
+    loadProducts(currentCategory);
+    updateOrderStatus();
+}
+
+/* ---------- CATEGORY ---------- */
+function selectCategory(category){
+    currentCategory = category;
+    document.querySelectorAll('.category-btn').forEach(btn=>btn.classList.remove('active'));
+    event.target.closest('.category-btn').classList.add('active');
+    selectedProduct = null;
+    loadProducts(category);
+    updateOrderSummary();
+}
+
+/* ---------- LOAD PRODUCTS ---------- */
+function loadProducts(category){
+    const productList = document.getElementById("productList");
+    productList.innerHTML = "";
+
+    /* --- PACKAGE DELIVERY UI --- */
+    if(category === "package"){
+        const packageContainer = document.createElement("div");
+        packageContainer.className = "package-delivery-container";
+        packageContainer.innerHTML = `
+            <h3>📦 Send Package to Another Building</h3>
+            <div class="package-form">
+                <div>
+                    <label>📍 Destination Building:</label>
+                    <select id="pkgDest">
+                        ${allBuildings.filter(b => b !== userHomeBuilding).map(b => 
+                            `<option value="${b}">Building ${b}</option>`
+                        ).join("")}
+                    </select>
+                </div>
+                <button class="package-confirm-btn" onclick="confirmPackage()">
+                    ✅ Confirm Package Delivery
+                </button>
+            </div>
+        `;
+        productList.appendChild(packageContainer);
+        return;
+    }
+
+    const stores = storeCatalog[category];
+    stores.forEach(store => {
+        const storeSection = document.createElement("div");
+        storeSection.className = "store-section";
+        
+        const storeTitle = document.createElement("div");
+        storeTitle.className = "store-title";
+        storeTitle.textContent = store.storeName;
+        storeSection.appendChild(storeTitle);
+        
+        const storeProducts = document.createElement("div");
+        storeProducts.className = "store-products";
+        
+        store.items.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "product-card";
+            card.innerHTML = `
+                <div class="product-name">${item.name}</div>
+                <div class="product-store">From: ${item.store}</div>
+            `;
+            card.onclick = ()=>{
+                document.querySelectorAll('.product-card').forEach(c=>c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedProduct = {
+                    name: item.name,
+                    store: item.store,
+                    storeName: store.storeName
+                };
+                updateOrderSummary();
+            };
+            storeProducts.appendChild(card);
+        });
+        
+        storeSection.appendChild(storeProducts);
+        productList.appendChild(storeSection);
+    });
+}
+
+/* ---------- PACKAGE CONFIRM ---------- */
+function confirmPackage(){
+    const dest = document.getElementById("pkgDest").value;
+    selectedProduct = {
+        name: "📦 Package Delivery",
+        store: userHomeBuilding,
+        storeName: `Building-to-Building Transfer`,
+        isPackage: true,
+        destination: dest
+    };
+    updateOrderSummary();
+}
+
+/* ---------- ORDER SUMMARY ---------- */
+function updateOrderSummary(){
+    const summary = document.getElementById("orderSummary");
+    const btn = document.getElementById("placeOrderBtn");
+
+    if(!selectedProduct){
+        summary.innerHTML = `<div style="text-align:center;color:#999;">No items selected</div>`;
+        btn.disabled = true;
+        return;
+    }
+
+    let destination = userHomeBuilding;
+    if(selectedProduct.isPackage){
+        destination = selectedProduct.destination;
+    }
+
+    summary.innerHTML = `
+        <div class="order-item">
+            <span>${selectedProduct.name}</span>
+            <span>${selectedProduct.store} → ${destination}</span>
+        </div>
+    `;
+    btn.disabled = false;
+}
+
+/* ---------- PLACE ORDER ---------- */
+function placeOrder(){
+    if(!selectedProduct) return;
+
+    let destination = userHomeBuilding;
+    if(selectedProduct.isPackage){
+        destination = selectedProduct.destination;
+    }
+
+    const order = {
+        product: selectedProduct,
+        location: destination,
+        timestamp: new Date().toLocaleTimeString()
+    };
+
+    fetch("http://localhost:5000/place_order",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(order)
+    })
+    .then(()=>alert("✅ Order placed successfully!"))
+    .catch(()=>alert("❌ Python server not running"));
+
+    selectedProduct=null;
+    updateOrderSummary();
+}
+
+/* ---------- ORDER STATUS ---------- */
+function updateOrderStatus(){
+    fetch("http://localhost:5000/order_status")
+    .then(res=>res.json())
+    .then(data=>{
+        const queueDiv = document.getElementById("orderQueue");
+        const userOrders = data.orders.filter(o=>o.location===userHomeBuilding || 
+            (o.product.isPackage && o.product.store === userHomeBuilding));
+
+        if(userOrders.length===0){
+            queueDiv.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No active deliveries</div>`;
+            return;
+        }
+
+        queueDiv.innerHTML="";
+        userOrders.forEach(order=>{
+            const div=document.createElement("div");
+            div.className=`queue-item ${order.status}`;
+            div.innerHTML=`
+              <div class="status">${order.status.toUpperCase()}</div>
+              <div class="details">
+                ${order.product.name}<br>
+                From: ${order.product.store}<br>
+                To: ${order.location}<br>
+                ${order.state || ""}
+              </div>`;
+            queueDiv.appendChild(div);
+        });
+    });
+    setTimeout(updateOrderStatus,1000);
+}
+
+/* ---------- INIT ---------- */
+window.onload = ()=>{
+    const savedHome = localStorage.getItem("userHomeBuilding");
+    if(savedHome){
+        userHomeBuilding = savedHome;
+        showAppScreen();
+    }
+};
+</script>
+
+</body>
+</html>
