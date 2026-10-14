@@ -1,0 +1,235 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SkyLogix V6 – Live</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+:root{--bg:#050a14;--pn:#0a1222;--ln:#1a2a46;--fg:#d6e4ff;--mu:#7d92b8;--ac:#38bdf8;--ok:#4ade80;--bad:#f87171}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:13px/1.4 Bahnschrift,"Segoe UI",system-ui,sans-serif}
+#app{height:100%;display:grid;grid-template-columns:128px 1fr 270px;grid-template-rows:auto 1fr 280px;grid-template-areas:"s t t" "s m r" "s b b";gap:1px;background:var(--ln)}
+#app.nobot{grid-template-rows:auto 1fr 0}#app.nobot #bot{display:none}#app>*{background:var(--pn);min-width:0;min-height:0}
+#side{grid-area:s;display:flex;flex-direction:column;padding:8px;gap:4px}#side b{font-size:15px;color:var(--ac);padding:4px 6px 10px;letter-spacing:.5px}
+button,select,input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--ln);border-radius:4px;padding:4px 8px}button{cursor:pointer}button:hover{border-color:var(--ac)}:focus-visible{outline:2px solid var(--ac)}
+#side button{text-align:left;border-color:transparent;background:none}#side button.on,#tabs button.on,.mb button.on{background:#0f2a4a;color:var(--ac);border-color:var(--ac)}
+#top{grid-area:t;display:flex;gap:6px;padding:6px 8px;align-items:center}#st{margin-left:auto;color:var(--mu)}#st.bad{color:var(--bad)}
+#main{grid-area:m;position:relative;overflow:hidden}#mv{position:absolute;inset:0}#page{position:absolute;inset:0;overflow:auto;padding:12px;background:var(--pn)}
+#ft{position:absolute;left:8px;top:8px;max-height:46%;overflow:auto;background:#0a1222e6;border:1px solid var(--ln);border-radius:6px;padding:4px}
+.mb{position:absolute;right:8px;top:8px;display:flex;gap:4px}#err{position:absolute;inset:auto 8px 8px 8px;background:#3a1218;border:1px solid var(--bad);padding:8px;border-radius:6px;z-index:5}
+#right{grid-area:r;overflow:auto;padding:8px}#bot{grid-area:b;display:flex;flex-direction:column;padding:6px 8px}#tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+#bp{flex:1;min-height:0;overflow:auto}.chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}.chips button{min-width:32px;font-weight:600}.chips .on{background:#0f2a4a}
+table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;border-bottom:1px solid var(--ln);text-align:left;white-space:nowrap}.sc{overflow-x:auto}
+.bar{display:inline-block;width:50px;height:7px;background:var(--ln);border-radius:3px;vertical-align:middle}.bar i{display:block;height:100%;border-radius:3px}
+.k{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.k div{border:1px solid var(--ln);border-radius:6px;padding:8px}.k b{display:block;font-size:20px}.mu{color:var(--mu)}
+.pl{height:260px;margin-bottom:6px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}input[type=text],input:not([type]){width:70px}h3,h4{margin:4px 0 8px}
+details{border:1px solid var(--ln);border-radius:6px;margin-bottom:8px;padding:4px 8px}summary{cursor:pointer;font-weight:600}.v3{height:380px;position:relative}
+.st{display:flex;flex-wrap:wrap;gap:2px 18px;margin:4px 0 8px;font-size:12px;color:var(--mu)}.st b{color:var(--fg)}.ov{position:absolute;left:10px;top:8px;z-index:2;pointer-events:none;font-weight:600;line-height:1.3}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.g2>div{height:340px;border:1px solid var(--ln);border-radius:6px}
+@media(max-width:820px){.g2{grid-template-columns:1fr}html,body{height:auto}#app{height:auto;grid-template-columns:1fr;grid-template-rows:auto;grid-template-areas:"s" "t" "m" "r" "b"}#side{flex-direction:row;overflow-x:auto}#main{height:60vh}#bot{height:320px}}
+</style></head><body><div id="app">
+<nav id="side"><b>SKYLOGIX V6</b><button data-v="fleet" class="on">Fleet</button><button data-v="missions">Missions</button><button data-v="traj">Trajectories</button><button data-v="ana">Analytics</button><button data-v="ctl">Controllers</button><button data-v="wx">Weather</button><button data-v="set">Settings</button></nav>
+<header id="top"><a href="/" style="color:var(--ac);text-decoration:none;margin-right:8px">&larr; V5 Dashboard</a><span id="msg" class="mu"></span><span id="st">connecting…</span><button onclick="fit()">Fit view</button><button onclick="fs()">Fullscreen</button><button onclick="MV.png('fleet_view')">3D PNG</button><button onclick="MV.svg('fleet_view')">3D SVG</button></header>
+<main id="main"><div id="mv"></div><div id="ft"></div><div class="mb" id="mb" style="display:none"></div><div id="page" style="display:none"></div><div id="err" style="display:none"></div></main>
+<aside id="right"><div class="chips" id="chips"></div><div id="det"></div></aside>
+<section id="bot"><div id="tabs"></div><div id="bp"></div><div class="st" id="bs"></div></section></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let B=localStorage.api||(location.protocol.startsWith('http')?'':'http://localhost:5000'),POLL=+localStorage.poll||1000;
+let FA=null,RA=null,asub='fleet',OV=null,DET=null,FT=null,AN=null,QS=null,CMP=null,sel=null,view='fleet',tab='pos',mode='fleet',V2=null,fitted=false;
+async function api(p,body){const r=await fetch(B+p,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const j=await r.json();if(j.status!=='ok')throw Error(j.message||'error');return j.data}
+const act=async(p,b)=>{try{const d=await api(p,b);toast('Done');poll();return d}catch(e){toast('Error: '+e.message)}};
+const toast=t=>{$('#msg').textContent=t;setTimeout(()=>$('#msg').textContent='',4000)};
+const num=id=>OV?OV.drones.findIndex(d=>d.id==id)+1:0,f1=a=>a.map(v=>(+v).toFixed(1)).join(', '),SC=s=>({IDLE:'#7d92b8',ASSIGNED:'#38bdf8',TAKEOFF:'#facc15',EN_ROUTE:'#4ade80',DELIVERING:'#a78bfa',REPLANNING:'#fb923c',RETURNING:'#22d3ee',LANDED:'#94a3b8'}[s]||'#fff');
+/* ---------- Three.js viewer (scene axes: east=x, north=y, up=z; backend x=north, y=east) ---------- */
+const m3=p=>new THREE.Vector3(p[1],p[0],p[2]);
+class Viewer{constructor(el){this.el=el;this.R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.S=new THREE.Scene();this.S.background=new THREE.Color(0x050a14);this.C=new THREE.PerspectiveCamera(50,1,.5,80000);this.C.up.set(0,0,1);this.th=.8;this.ph=.6;this.r=800;this.t=new THREE.Vector3();this.o={};this.u=new Set();el.appendChild(this.R.domElement);this.grid(1000);
+ const c=this.R.domElement;let dr=null;c.onpointerdown=e=>{dr=e;c.setPointerCapture(e.pointerId)};c.onpointerup=()=>dr=null;
+ c.onpointermove=e=>{if(!dr)return;const dx=e.clientX-dr.clientX,dy=e.clientY-dr.clientY;dr=e;if(e.shiftKey||e.buttons==2){const k=this.r/700;this.t.x+=-Math.sin(this.th)*dx*k;this.t.y+=Math.cos(this.th)*dx*k;this.t.z+=dy*k}else{this.th-=dx*.008;this.ph=Math.max(.05,Math.min(1.5,this.ph+dy*.008))}};
+ c.onwheel=e=>{e.preventDefault();this.r=Math.max(20,Math.min(60000,this.r*(1+e.deltaY*.001)))};c.oncontextmenu=e=>e.preventDefault();
+ new ResizeObserver(()=>{const w=el.clientWidth,h=el.clientHeight;if(w&&h){this.R.setSize(w,h);this.C.aspect=w/h;this.C.updateProjectionMatrix()}}).observe(el)}
+ grid(s){this.g&&this.S.remove(this.g);this.g=new THREE.GridHelper(s,20,0x23406e,0x132238);this.g.rotation.x=Math.PI/2;this.S.add(this.g);this.axg&&this.S.remove(this.axg);const a=this.axg=new THREE.Group(),L=s*.55;
+ [['Y (East)',[L,0,0],0x4ade80],['X (North)',[0,L,0],0xf87171],['Z (Altitude)',[0,0,L],0x38bdf8]].forEach(([t,p,c])=>{a.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(...p)]),new THREE.LineBasicMaterial({color:c})));
+  const k=document.createElement('canvas');k.width=256;k.height=64;const x=k.getContext('2d');x.font='bold 36px sans-serif';x.fillStyle='#'+new THREE.Color(c).getHexString();x.textAlign='center';x.fillText(t,128,44);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(k),depthTest:false,transparent:true}));sp.position.set(...p).multiplyScalar(1.06);sp.userData.label=t;sp.userData.col=c;a.add(sp)});this.S.add(a)}
+ fit(e){this.r=Math.max(150,e*2.6);this.t.set(0,0,20);this.grid(Math.max(200,Math.ceil(e*2.4/100)*100))}
+ begin(){this.u=new Set()}end(){for(const k in this.o)this.o[k].visible=this.u.has(k)&&this.o[k].userData.v!==false}
+ get(k,mk){return this.o[k]||(this.o[k]=mk(),this.S.add(this.o[k]),this.o[k])}
+ line(k,p,c,op=1){const l=this.get(k,()=>new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:op})));l.material.color.set(c);l.material.opacity=op;l.geometry.setFromPoints((p||[]).map(m3));l.userData.v=!!(p&&p.length>1);this.u.add(k)}
+ pts(k,p,c,s){const o=this.get(k,()=>new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({color:c,size:s,sizeAttenuation:false})));o.material.color.set(c);o.geometry.setFromPoints((p||[]).map(m3));o.userData.v=!!(p&&p.length);this.u.add(k)}
+ mark(k,p,c){const o=this.get(k,()=>new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshBasicMaterial({color:c})));o.material.color.set(c);o.position.copy(m3(p));o.scale.setScalar(this.r/90);this.u.add(k)}
+ cyl(k,x,y,r){const o=this.get(k,()=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,120,24),new THREE.MeshBasicMaterial({color:0xf87171,transparent:true,opacity:.25}));c.rotation.x=Math.PI/2;return c});o.position.set(y,x,60);this.u.add(k)}
+ draw(){const r=this.r,c=Math.cos(this.ph);this.axg&&this.axg.children.forEach(q=>q.isSprite&&q.scale.set(r*.3,r*.075,1));this.C.position.set(this.t.x+r*c*Math.cos(this.th),this.t.y+r*c*Math.sin(this.th),this.t.z+r*Math.sin(this.ph));this.C.lookAt(this.t);this.R.render(this.S,this.C)}
+ png(n){this.draw();dl(this.R.domElement.toDataURL('image/png'),n+'.png')}
+ svg(n){const w=this.el.clientWidth,h=this.el.clientHeight;this.draw();this.C.updateMatrixWorld();let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="#050a14"/>`;
+  const P=(a,i)=>{const v=new THREE.Vector3(a[i],a[i+1],a[i+2]).project(this.C);return[(v.x+1)/2*w,(1-v.y)/2*h]};
+  for(const o of [...Object.values(this.o),...(this.axg?this.axg.children:[])]){if(!o.visible||!o.geometry)continue;if(o.isSprite){const[x,y]=P([o.position.x,o.position.y,o.position.z],0);s+=`<text x="${x}" y="${y}" fill="#${new THREE.Color(o.userData.col).getHexString()}" font-size="14" font-family="sans-serif" text-anchor="middle">${o.userData.label}</text>`;continue}const a=o.geometry.attributes.position;if(o.isLine&&a){const q=[];for(let i=0;i<a.array.length;i+=3)q.push(P(a.array,i).join(','));s+=`<polyline fill="none" stroke="#${o.material.color.getHexString()}" stroke-opacity="${o.material.opacity}" points="${q.join(' ')}"/>`}
+   else if(o.isPoints&&a)for(let i=0;i<a.array.length;i+=3){const[x,y]=P(a.array,i);s+=`<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#${o.material.color.getHexString()}"/>`}
+   else if(o.isMesh&&o.geometry.type=='SphereGeometry'){const[x,y]=P([o.position.x,o.position.y,o.position.z],0);s+=`<circle cx="${x}" cy="${y}" r="5" fill="#${o.material.color.getHexString()}"/>`}}
+  dl(URL.createObjectURL(new Blob([s+'</svg>'],{type:'image/svg+xml'})),n+'.svg')}}
+const dl=(u,n)=>{const a=document.createElement('a');a.href=u;a.download=n;a.click()};
+const MV=new Viewer($('#mv'));
+(function loop(){requestAnimationFrame(loop);if($('#mv').offsetParent)MV.draw();if(V2&&V2.el.offsetParent)V2.draw()})();
+/* ---------- plots ---------- */
+const RGB=['#38bdf8','#4ade80','#f87171'],PAL=['#38bdf8','#4ade80','#f87171','#fb923c','#a78bfa','#22d3ee','#facc15','#f472b6','#a3e635','#2dd4bf','#fb7185','#c4b5fd'];
+const PS={pos:['Cartesian Position vs Time','Position (m)',[['X (north)','x_m'],['Y (east)','y_m'],['Z (up)','z_m']]],vel:['Velocity Components','Velocity (m/s)',[['Vx','vx_ms'],['Vy','vy_ms'],['Vz','vz_ms']]],acc:['Acceleration Components','Acceleration (m/s²)',[['Ax','ax_ms2'],['Ay','ay_ms2'],['Az','az_ms2']]],att:['Attitude Dynamics','Degrees',[['Roll','roll_deg'],['Pitch','pitch_deg'],['Yaw','yaw_deg']]]};
+const CG={Position:['x_m','y_m','z_m'],Velocity:['vx_ms','vy_ms','vz_ms'],Acceleration:['ax_ms2','ay_ms2','az_ms2'],Roll:['roll_deg'],Pitch:['pitch_deg'],Yaw:['yaw_deg']},on=Object.fromEntries(Object.keys(CG).map(k=>[k,true]));
+const cfg={displaylogo:false,responsive:true,scrollZoom:true,toImageButtonOptions:{format:'png',scale:2}};
+const lay=(t,y,x)=>({title:{text:t,font:{size:13}},font:{color:'#d6e4ff',size:11},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',margin:{l:58,r:15,t:62,b:42},xaxis:{title:x===undefined?'Time (s)':x,gridcolor:'#1a2a46'},yaxis:{title:y,gridcolor:'#1a2a46'},legend:{orientation:'h',y:-.28},uirevision:t});
+function empty(id,t){const e=$('#'+id);if(!e)return true;if(!(e.firstChild&&e.firstChild.tagName=='P')&&e.dataset.p){Plotly.purge(e);delete e.dataset.p}e.innerHTML=`<p class="mu">${t}</p>`;return true}
+const TL={linear:'Linear',quintic:'Quintic Polynomial',bezier:'Bezier Curve',bspline:'B-Spline',min_jerk:'Minimum Jerk',min_snap:'Minimum Snap'};
+const trn=()=>TL[DET&&DET.current_metrics?DET.current_metrics.trajectory_type:'']||'n/a',ttl=t=>`<b>Drone ${num(sel)} – ${t}</b><br>Trajectory: ${trn()}`;
+const fv=(v,u='',d=1)=>v==null||isNaN(v)?'–':(+v).toFixed(d)+u,ch=(l,v)=>`<span>${l}: <b>${v}</b></span>`,card=(a,b)=>`<div><span class="mu">${a}</span><b>${b}</b></div>`;
+function stats(key){const s=DET&&DET.series,c=DET&&DET.current_metrics,L=DET&&DET.lifetime;if(!s||!s.t||!s.t.length||!c||!L)return'';const last=a=>a[a.length-1],mx=a=>Math.max(...a.map(Math.abs));
+ const Pp=()=>[ch('Current position',`X = ${fv(last(s.x_m))} m, Y = ${fv(last(s.y_m))} m, Z = ${fv(last(s.z_m))} m`),ch('Distance travelled (mission)',fv(c.distance_travelled,' m')),ch('Distance remaining',fv(c.distance_remaining,' m')),ch('Total distance (lifetime)',fv(L.total_distance,' m'))];
+ const Vv=()=>[ch('Current velocity',fv(c.current_velocity,' m/s')),ch('Average velocity (mission)',fv(c.avg_velocity,' m/s')),ch('Max velocity (mission)',fv(c.max_velocity,' m/s')),ch('Max velocity (lifetime)',fv(L.max_velocity_ever,' m/s'))];
+ const Ac=()=>[ch('Current acceleration',fv(c.current_acceleration,' m/s²')),ch('Average acceleration (mission)',fv(c.avg_acceleration,' m/s²')),ch('Max acceleration (mission)',fv(c.max_acceleration,' m/s²')),ch('Max acceleration (lifetime)',fv(L.max_acceleration_ever,' m/s²'))];
+ const At=()=>{let h=0;const y=s.yaw_deg;for(let i=1;i<y.length;i++)h+=Math.abs(((y[i]-y[i-1]+540)%360)-180);return[ch('Max roll',fv(mx(s.roll_deg),'°',0)),ch('Max pitch',fv(mx(s.pitch_deg),'°',0)),ch('Current yaw',fv(last(y),'°',0)),ch('Max yaw',fv(mx(y),'°',0)),ch('Total heading change (shown window)',fv(h,'°',0))]};
+ return({pos:Pp,vel:Vv,acc:Ac,att:At,comb:()=>[ch('Trajectory',trn()),ch('Distance',fv(c.distance_travelled,' m')),ch('Max velocity',fv(c.max_velocity,' m/s')),ch('Max acceleration',fv(c.max_acceleration,' m/s²')),ch('Max roll',fv(mx(s.roll_deg),'°',0)),ch('Max pitch',fv(mx(s.pitch_deg),'°',0))]}[key]||(()=>[]))().join('')}
+function csv(id){const u=t=>'data:text/csv;charset=utf-8,'+encodeURIComponent(t);if(id=='d_3d'&&DET&&DET.series.t){const s=DET.series;return dl(u('t,x_north_m,y_east_m,z_altitude_m\n'+s.t.map((t,i)=>[t,s.x_m[i],s.y_m[i],s.z_m[i]].join(',')).join('\n')),'drone'+num(sel)+'_3d_path.csv')}
+ const e=$('#'+id);if(!e||!e.data)return toast('Nothing to export yet');const T=e.data;let r;if(T[0].labels)r=[['label','value'],...T[0].labels.map((l,i)=>[l,T[0].values[i]])];
+ else{const n=Math.max(...T.map(t=>t.x.length));r=[['x',...T.map(t=>t.name||'y')]];for(let i=0;i<n;i++)r.push([T[0].x[i],...T.map(t=>t.y[i]==null?'':t.y[i])])}dl(u(r.map(a=>a.join(',')).join('\n')),id+'.csv')}
+function plot(id,key){const e=$('#'+id),s=DET&&DET.series;if(!e)return;if(!s||!s.t||!s.t.length)return empty(id,'Waiting for drone history from the backend…');if(e.firstChild&&e.firstChild.tagName=='P')e.innerHTML='';
+ const n=`Drone ${num(sel)}`;let tr,L;
+ if(key=='comb'){let k=0;tr=[];for(const g in CG)CG[g].forEach(q=>{if(on[g])tr.push({x:s.t,y:s[q],name:g+(CG[g].length>1?' '+q[0].toUpperCase():''),line:{color:PAL[k%12],width:1.3}});k++});L=lay(ttl('Complete Flight Dynamics'),'Value (m, m/s, m/s², deg)')}
+ else if(key=='att'){const A=PS.att[2],gc='#1a2a46',dom=[[.68,1],[.35,.63],[0,.3]];tr=A.map((q,i)=>({x:s.t,y:s[q[1]],name:q[0],line:{color:RGB[i],width:1.5},xaxis:'x'+(i?i+1:''),yaxis:'y'+(i?i+1:'')}));L=lay(ttl('Attitude Dynamics (Roll, Pitch, Yaw)'),'');
+  A.forEach((q,i)=>{const f=i?i+1:'';L['yaxis'+f]={title:q[0]+' (°)',domain:dom[i],gridcolor:gc,anchor:'x'+f};L['xaxis'+f]={matches:i<2?'x3':undefined,gridcolor:gc,showticklabels:i==2,title:i==2?'Time (s)':'',anchor:'y'+f}});L.showlegend=false}
+ else{const g=PS[key];tr=g[2].map((q,i)=>({x:s.t,y:s[q[1]],name:q[0],line:{color:RGB[i],width:1.5}}));L=lay(ttl(g[0]),g[1])}
+ e.dataset.p=1;Plotly.react(e,tr,L,cfg)}
+const ex=(id,fmt)=>id=='d_3d'?(V2&&V2[fmt]('drone'+num(sel)+'_3d_path')):Plotly.downloadImage($('#'+id),{format:fmt,filename:id+'_drone'+num(sel),scale:2,width:1100,height:520});
+const exb=id=>`<button onclick="ex('${id}','png')">PNG</button><button onclick="ex('${id}','svg')">SVG</button><button onclick="csv('${id}')">CSV</button>`;
+/* ---------- bottom tabs ---------- */
+const TABS={pos:'Position',vel:'Velocity',acc:'Acceleration',att:'Attitude',log:'Mission Logs',ana:'Analytics'};
+$('#tabs').innerHTML=Object.entries(TABS).map(([k,v])=>`<button data-t="${k}" onclick="setTab('${k}')">${v}</button>`).join('')+'<span id="bex">'+exb('bp')+'</span>';
+function setTab(t){tab=t;$$('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('#bex').style.display=['log','ana'].includes(t)?'none':'';const e=$('#bp');Plotly.purge(e);delete e.dataset.p;e.innerHTML='';poll()}
+function renderBot(){const e=$('#bp');if(['pos','vel','acc','att'].includes(tab)){plot('bp',tab);$('#bs').innerHTML=stats(tab);return}$('#bs').innerHTML='';if(e.dataset.p){Plotly.purge(e);delete e.dataset.p}
+ e.innerHTML=tab=='log'?(OV?OV.log.map(l=>`<div class="mu">${l}</div>`).join('')||'<p class="mu">No events yet.</p>':''):kpi();}
+function kpi(){if(!FA)return'<p class="mu">Loading…</p>';const a=FA,k=[['Fleet deliveries',a.fleet_deliveries],['Fleet distance',(a.fleet_distance_m/1000).toFixed(2)+' km'],['Fleet energy',a.fleet_energy_wh+' Wh'],['Fleet replans',a.fleet_replans],['Avg delivery time',a.avg_delivery_time_s==null?'N/A':a.avg_delivery_time_s+' s'],['Avg speed (distance/time)',a.avg_velocity==null?'N/A':a.avg_velocity+' m/s'],['Active missions',a.active_missions],['Completed missions',a.completed_missions]];return`<div class="k">${k.map(([x,y])=>card(x,y)).join('')}</div>`}
+/* ---------- fleet / right panel ---------- */
+let sig='';
+function renderSide(){const D=OV.drones,s=D.map(d=>d.id).join();if(s!=sig){sig=s;$('#chips').innerHTML=D.map((d,i)=>`<button data-id="${d.id}" style="border-color:${d.color}" onclick="selD('${d.id}')">${i+1}</button>`).join('')}
+ $$('#chips button').forEach(b=>b.classList.toggle('on',b.dataset.id==sel));const d=D.find(x=>x.id==sel);if(!d){$('#det').innerHTML='<p class="mu">No drones reported.</p>';return}
+ const m=d.mission,r=(a,b)=>`<tr><td class="mu">${a}</td><td>${b}</td></tr>`;
+ $('#det').innerHTML=`<h4 style="color:${d.color}">Drone ${num(d.id)} · ${d.id}</h4><table>${r('State',`<b style="color:${SC(d.state)}">${d.state}</b>`+(d.fault?' · '+d.fault:''))+r('Position (m)',f1([d.x,d.y,d.z]))+r('Battery',d.battery.toFixed(0)+'%')+r('Mission',m?`#${m.id} ${m.pickup_name} → ${m.deliver_name}`:'none')+r('Queue',d.queue_len)+r('Replans',d.replans)+r('Deliveries',d.deliveries)+r('Distance',d.km.toFixed(2)+' km')}</table><div class="row"><button onclick="show('drone')">Open Drone ${num(d.id)} dashboard</button></div>`}
+function renderFleetTbl(){const D=OV.drones;$('#ft').innerHTML=`<table><tr><th>Drone</th><th>Status</th><th>Position</th><th>Mission</th><th>Queue</th><th>Battery</th></tr>`+D.map((d,i)=>{const b=d.battery;return`<tr style="cursor:pointer;${d.id==sel?'background:#0f2a4a':''}" onclick="selD('${d.id}')" ondblclick="show('drone')"><td style="color:${d.color}">Drone ${i+1}</td><td style="color:${SC(d.state)}">${d.state}</td><td>${f1([d.x,d.y,d.z])}</td><td>${d.mission?'#'+d.mission.id+' '+d.mission.deliver_name:'–'}</td><td>${d.queue_len}</td><td><span class="bar"><i style="width:${b}%;background:${b<25?'var(--bad)':'var(--ok)'}"></i></span> ${b.toFixed(0)}%</td></tr>`}).join('')+'</table>'}
+function selD(id){sel=id;if(view=='drone')show('drone');else poll()}
+/* ---------- main 3D scene ---------- */
+const lineMode=()=>view=='traj'&&mode!='cmp';
+function drawMain(){if(!OV)return;const V=MV;V.begin();
+ if(!fitted&&OV.drones.length){let e=100;OV.drones.forEach(d=>{e=Math.max(e,Math.abs(d.x),Math.abs(d.y));if(d.mission)e=Math.max(e,...d.mission.deliver_xy.map(Math.abs))});V.fit(e);fitted=true}
+ const only=view=='traj'&&mode=='replan';
+ OV.drones.forEach(d=>{if(only&&d.id!=sel)return;V.mark('m'+d.id,[d.x,d.y,d.z],d.color);V.pts('t'+d.id,d.mission?[[...d.mission.deliver_xy,0]]:[],d.color,8)});
+ OV.obstacles.forEach((o,i)=>V.cyl('o'+i,o.x,o.y,o.r));
+ if(view=='traj'&&mode=='fleet'&&FT)for(const id in FT){const q=FT[id];V.line('p'+id,q.past,q.color,.9);V.line('f'+id,q.future,q.color,.4)}
+ if(only&&DET){V.line('cur',DET.current,'#94a3b8',.5);V.line('old',DET.old,'#f87171',1);V.line('new',DET.new,'#4ade80',1)}
+ V.end()}
+function fit(){if(!OV)return;fitted=false;drawMain()}
+function setMode(m){mode=m;FT=CMP=null;show('traj')}
+/* ---------- pages ---------- */
+const REAS=['new_delivery','obstacle','no_fly_zone','weather','drone_failure','battery'];
+const P={
+missions:()=>`<h3>Missions</h3><div class="row">Pickup X<input id="px" value="0"> Y<input id="py" value="0"> Deliver X<input id="dx" value="400"> Y<input id="dy" value="300"><select id="pr"><option>standard<option>express<option>urgent</select><button onclick="addM()">Queue delivery</button></div>
+<div class="row"><select id="rr">${REAS.map(r=>`<option>${r}`).join('')}</select><button onclick="act('/api/v6/replan',{reason:$('#rr').value})">Replan fleet</button><button onclick="obsAhead()">Obstacle ahead of selected drone</button><button onclick="act('/api/v6/drone/'+sel+'/fail',{})">Fail selected drone</button></div><div id="mq" class="sc"></div>`,
+ana:()=>`<h3>Analytics</h3><div class="row">${[['fleet','Fleet'],['traj','Trajectory'],['res','Research']].map(([k,t])=>`<button class="${asub==k?'on':''}" onclick="asub='${k}';RA=null;show('ana')">${t}</button>`).join('')}</div><div id="ak" class="k"></div>${chartsHTML()}`,
+wx:()=>`<h3>Weather</h3><div class="row">Wind <input id="wk" type="range" min="0" max="60" value="${OV?OV.weather.wind_kmh:0}" oninput="$('#wv').textContent=this.value"> <b id="wv">${OV?OV.weather.wind_kmh:0}</b> km/h<select id="wc"><option value="0">Clear<option value="61">Rain<option value="95">Thunderstorm</select><button onclick="act('/api/weather',{wind_kmh:+$('#wk').value,weather_code:+$('#wc').value})">Apply and replan</button></div><div id="wi" class="mu"></div>`,
+set:()=>`<h3>Settings</h3><div class="row">Backend URL <input id="bu" style="width:260px" value="${B||location.origin}"><button onclick="B=$('#bu').value.replace(/\\/$/,'');localStorage.api=B;poll()">Save</button></div><div class="row">Trajectory algorithm <select onchange="act('/api/v6/trajectory/method',{method:this.value})">${Object.entries(TL).map(([k,v])=>`<option value="${k}" ${OV&&OV.method==k?'selected':''}>${v}`).join('')}</select></div><div class="row">Refresh <select onchange="POLL=+this.value;localStorage.poll=POLL;restart()">${[500,1000,2000].map(v=>`<option ${v==POLL?'selected':''}>${v}`).join('')}</select> ms</div>`,
+cmp:()=>`<h3>Trajectory comparison: Drone ${num(sel)}</h3><div id="cm"></div>`};
+const DP=[['cm','Current Mission'],['pos','Cartesian Position vs Time'],['vel','Velocity Components'],['acc','Acceleration Components'],['att','Attitude Dynamics (Roll, Pitch, Yaw)'],['comb','Complete Flight Dynamics'],['3d','3D Flight Path'],['q','Mission Queue'],['lt','Lifetime Statistics'],['h','Mission History']],GK=['pos','vel','acc','att','comb'];
+function droneHTML(){const n=num(sel);return`<h3>Drone ${n} dashboard</h3>`+DP.map(([k,t])=>{const g=GK.includes(k)||k=='3d',cls=k=='3d'?'v3':GK.includes(k)?'pl':k=='cm'||k=='lt'?'k':'sc';
+ return`<details data-k="${k}" ${k=='cm'||k=='pos'?'open':''}><summary>Drone ${n} – ${t.replace(' (Roll, Pitch, Yaw)','')}</summary>${g?`<div class="row">${exb('d_'+k)}${k=='comb'?Object.keys(CG).map(q=>`<label><input type="checkbox" ${on[q]?'checked':''} onchange="on['${q}']=this.checked;renderDrone()"> ${q}</label>`).join(''):''}</div>`:''}${k=='h'?'<div class="row"><input id="hs" style="width:240px" placeholder="Search deliveries…" oninput="renderDrone()"></div>':''}<div class="${cls}" id="d_${k}"></div>${GK.includes(k)?`<div class="st" id="s_${k}"></div>`:''}</details>`}).join('')}
+const tbl=(h,r,e)=>r.length?`<table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(a=>`<tr>${a.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>`:`<p class="mu">${e}</p>`;
+function renderDrone(){if(!DET)return;$$('#page details[open]').forEach(d=>{const k=d.dataset.k,c=DET.current_metrics,L=DET.lifetime;
+ if(GK.includes(k)){plot('d_'+k,k);$('#s_'+k).innerHTML=stats(k)}
+ else if(k=='cm')$('#d_cm').innerHTML=c?[['Distance Travelled',fv(c.distance_travelled,' m')],['Distance Remaining',fv(c.distance_remaining,' m')],['Current Velocity',fv(c.current_velocity,' m/s')],['Average Velocity',fv(c.avg_velocity,' m/s')],['Maximum Velocity',fv(c.max_velocity,' m/s')],['Average Acceleration',fv(c.avg_acceleration,' m/s²')],['Maximum Acceleration',fv(c.max_acceleration,' m/s²')],['Max |a| per axis',`${fv(c.max_abs_ax)} / ${fv(c.max_abs_ay)} / ${fv(c.max_abs_az)}`],['Speed now (H / V)',`${fv(c.speed_h)} / ${fv(c.speed_v)} m/s`],['Min speed',fv(c.min_speed,' m/s')],['Avg speed (moving)',fv(c.avg_speed_moving,' m/s')],['Accel-limit violations',c.violations],['Status',c.status],['Energy Consumed',fv(c.energy_consumed,' Wh',2)],['ETA',fv(c.eta,' s',0)],['Trajectory Type',TL[c.trajectory_type]||'–'],['Replans',c.replans]].map(x=>card(...x)).join(''):'<p class="mu">No mission flown yet.</p>';
+ else if(k=='lt')$('#d_lt').innerHTML=L?[['Deliveries Completed',L.deliveries_completed],['Total Distance',fv(L.total_distance,' m')],['Total Flight Time',fv(L.total_flight_time,' s')],['Total Energy',fv(L.total_energy,' Wh',2)],['Total Replans',L.total_replans],['Failed Missions',L.failed_missions],['Success Rate',fv(L.success_rate_pct,' %')],['Average Delivery Time',L.average_delivery_time==null?'N/A':fv(L.average_delivery_time,' s')],['Maximum Velocity Ever',fv(L.max_velocity_ever,' m/s')],['Maximum Acceleration Ever',fv(L.max_acceleration_ever,' m/s²')]].map(x=>card(...x)).join(''):'';
+ else if(k=='3d'){if(!V2||!V2.el.isConnected){V2=new Viewer($('#d_3d'));$('#d_3d').insertAdjacentHTML('afterbegin','<div class="ov" id="d3t"></div>')}const V=V2,s=DET.series,dr=OV.drones.find(x=>x.id==sel),n=s.x_m?s.x_m.length:0;$('#d3t').innerHTML=`Drone ${num(sel)} – 3D Flight Path<br><span class="mu">Trajectory: ${trn()}</span>`;V.begin();
+  V.line('past',s.x_m?s.x_m.map((x,i)=>[x,s.y_m[i],s.z_m[i]]):[],dr.color,.9);V.line('fut',DET.current,'#94a3b8',.6);V.line('old',DET.old,'#f87171',1);V.line('new',DET.new,'#4ade80',1);V.mark('me',[dr.x,dr.y,dr.z],dr.color);V.end();
+  if(!V.fitted&&n){V.fit(Math.max(100,...s.x_m.map(Math.abs),...s.y_m.map(Math.abs))*1.1);V.fitted=true}}
+ else if(k=='q'){const q=(DET.mission?[DET.mission]:[]).concat(DET.queue);$('#d_q').innerHTML=tbl(['ID','From','To','Priority','Status'],q.map(m=>['#'+m.id,m.pickup_name,m.deliver_name,m.priority,m.status]),'Queue empty.')}
+ else if(k=='h'){const f=($('#hs')?$('#hs').value:'').toLowerCase(),H=DET.delivery_history.filter(r=>JSON.stringify(r).toLowerCase().includes(f)).reverse();$('#d_h').innerHTML=tbl(['Delivery ID','Start','Destination','Distance (m)','Flight Time (s)','Trajectory','Replans','Energy (Wh)','Completion Time'],H.map(r=>[r.delivery_id,r.start_location,r.destination,r.distance,r.flight_time,TL[r.trajectory_type]||r.trajectory_type,r.replans,r.energy_consumed,r.completion_time.replace('T',' ')]),'No completed deliveries yet.')}})}
+function show(v){view=v;$$('#side button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
+ const three=v=='fleet'||(v=='traj'&&mode!='cmp'),page=!three;$('#mv').style.display=three?'':'none';$('#ft').style.display=v=='fleet'?'':'none';$('#page').style.display=page?'':'none';
+ $('#mb').style.display=v=='traj'?'flex':'none';$('#mb').innerHTML=[['fleet','Fleet paths'],['replan','Replanning'],['cmp','Comparison']].map(([k,t])=>`<button class="${mode==k?'on':''}" onclick="setMode('${k}')">${t}</button>`).join('');
+ $('#app').classList.toggle('nobot',v=='drone');V2=v=='drone'?null:V2;
+ $('#page').innerHTML=v=='drone'?droneHTML():v=='traj'&&mode=='cmp'?P.cmp():P[v]?P[v]():'';
+ $$('#page details').forEach(d=>d.ontoggle=()=>view=='drone'?renderDrone():renderAna());if(v=='ctl')ctlInit();if(OV)render();poll()}
+$$('#side button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+function addM(){const g=i=>+$('#'+i).value;act('/api/v6/mission/enu',{pickup_x:g('px'),pickup_y:g('py'),deliver_x:g('dx'),deliver_y:g('dy'),priority:$('#pr').value})}
+function obsAhead(){const c=DET&&DET.current;if(!c||c.length<2)return toast('Selected drone has no planned path');const p=c[c.length>>1];act('/api/v6/obstacle/enu',{x:p[0],y:p[1]})}
+async function loadCmp(){const d=OV.drones.find(x=>x.id==sel);if(!d||!d.mission){$('#cm').innerHTML='<p class="mu">Selected drone has no active mission to compare.</p>';return}
+ try{CMP=await api('/api/v6/trajectory/compare',{start:[d.x,d.y,d.z],goal:[...d.mission.deliver_xy,0]})}catch(e){return $('#cm').innerHTML='<p class="mu">'+e.message+'</p>'}renderCmp()}
+function renderCmp(){if(!CMP||!$('#cm'))return;const M=[['path_length_m','Path length (m)'],['flight_time_s','Flight time (s)'],['energy_wh','Energy (Wh)'],['max_velocity','Max velocity (m/s)'],['max_acceleration','Max accel (m/s²)'],['max_jerk','Max jerk (m/s³)'],['max_snap','Max snap (m/s⁴)'],['smoothness_score','Smoothness (0–100)'],['computation_ms','Compute (ms)']],x=CMP.map(r=>r.method);
+ $('#cm').innerHTML=`<div class="row">${exb('cmp1')}</div><div id="cmp1" style="height:520px"></div><div class="sc"><table><tr><th>Method</th>${M.map(m=>`<th>${m[1]}</th>`).join('')}</tr>${CMP.map(r=>`<tr><td>${r.method}</td>${M.map(m=>`<td>${r[m[0]]}</td>`).join('')}</tr>`).join('')}</table></div>`;
+ const L={...lay('Trajectory comparison metrics',''),grid:{rows:3,columns:3,pattern:'independent'},showlegend:false,margin:{l:55,r:10,t:34,b:40}};
+ const tr=M.map((m,i)=>{L['yaxis'+(i?i+1:'')]={title:{text:m[1],font:{size:10}},gridcolor:'#1a2a46'};L['xaxis'+(i?i+1:'')]={gridcolor:'#1a2a46',tickfont:{size:9}};return{type:'bar',x,y:CMP.map(r=>r[m[0]]),marker:{color:PAL.slice(0,6)},xaxis:'x'+(i?i+1:''),yaxis:'y'+(i?i+1:'')}});
+ Plotly.react('cmp1',tr,L,cfg)}
+const CHS={fleet:[['f1','Deliveries per drone'],['f2','Replans per drone'],['f3','Distance travelled per drone'],['f4','Energy consumed per drone'],['f5','Battery level per drone']],traj:[['t1','Average delivery time by trajectory'],['t2','Average energy by trajectory'],['t3','Average distance by trajectory'],['t4','Average replans by trajectory']],res:[['r1','Trajectory usage distribution'],['r2','Weather impact by wind strength'],['r3','Controller performance (RMS tilt per drone)']]};
+const chartsHTML=()=>CHS[asub].map(([id,t],i)=>`<details ${i<2?'open':''}><summary>${t}</summary><div class="row">${exb(id)}</div><div class="pl" id="${id}"></div></details>`).join('');
+function renderAna(){if(!OV||!FA||!$('#ak'))return;const D=OV.drones,c=D.map(d=>d.color),x=D.map((d,i)=>'Drone '+(i+1)),a=FA,pd=a.per_drone;
+ const bar=(id,t,X,Y,yt,col)=>{const e=$('#'+id);if(!e||!e.offsetParent)return;Plotly.react(e,[{type:'bar',x:X,y:Y,name:yt,marker:{color:col||PAL}}],{...lay(t,yt,''),xaxis:{gridcolor:'#1a2a46'},margin:{l:58,r:15,t:40,b:42}},cfg)};let K;
+ if(asub=='fleet'){K=[['Fleet deliveries',a.fleet_deliveries],['Fleet distance',(a.fleet_distance_m/1000).toFixed(2)+' km'],['Fleet energy',a.fleet_energy_wh+' Wh'],['Fleet replans',a.fleet_replans],['Avg delivery time',a.avg_delivery_time_s==null?'N/A':a.avg_delivery_time_s+' s'],['Avg speed (distance/time)',a.avg_velocity==null?'N/A':a.avg_velocity+' m/s'],['Active missions',a.active_missions],['Completed missions',a.completed_missions]];
+  bar('f1','Deliveries per drone',x,pd.deliveries,'Deliveries',c);bar('f2','Replans per drone',x,pd.replans,'Replans',c);bar('f3','Distance travelled per drone (incl. current mission)',x,pd.distance,'Distance (m)',c);bar('f4','Energy consumed per drone (incl. current mission)',x,pd.energy,'Energy (Wh)',c);bar('f5','Battery level per drone',x,pd.battery,'Battery (%)',c)}
+ else if(asub=='traj'){const B=a.by_trajectory,X=B.map(b=>TL[b.method]||b.method);K=[['Completed deliveries',a.completed_missions],['Algorithms used',B.length],['Active algorithm',TL[OV.method]||OV.method]];
+  bar('t1','Average delivery time by trajectory',X,B.map(b=>b.avg_time),'Seconds');bar('t2','Average energy by trajectory',X,B.map(b=>b.avg_energy),'Energy (Wh)');bar('t3','Average distance by trajectory',X,B.map(b=>b.avg_distance),'Distance (m)');bar('t4','Average replans by trajectory',X,B.map(b=>b.avg_replans),'Replans')}
+ else{const r=RA;if(!r)return;K=[['Total deliveries',r.total_deliveries],['Completed missions',r.completed_missions],['Failed missions',r.failed_missions],['Mission success rate',r.success_rate_pct+' %'],['Total flight hours',r.flight_hours+' h'],['Total energy',r.total_energy_wh+' Wh'],['Avg delivery time',r.avg_delivery_time_s==null?'N/A':r.avg_delivery_time_s+' s'],['Replanning frequency',`${r.replans_per_delivery}/delivery, ${r.replans_per_hour}/h`],['Controller RMS tilt',r.controller_mean_rms_tilt_deg+'°'],['Weather impact',`wind ${r.weather.wind_kmh} km/h, speed ×${(+r.weather.speed_modifier).toFixed(2)}`]];
+  const e1=$('#r1'),e2=$('#r2');const u=r.trajectory_usage;if(e1&&e1.offsetParent)Plotly.react(e1,[{type:'pie',labels:Object.keys(u).map(k=>TL[k]||k),values:Object.values(u),hole:.4,textinfo:'label+percent'}],{title:{text:'Trajectory usage distribution',font:{size:13}},font:{color:'#d6e4ff'},paper_bgcolor:'rgba(0,0,0,0)',margin:{t:50,b:10}},cfg);
+  if(e2&&e2.offsetParent){const w=r.weather_buckets;Plotly.react(e2,[{type:'bar',x:w.map(b=>b.bucket),y:w.map(b=>b.avg_time),name:'Avg delivery time (s)'},{type:'bar',x:w.map(b=>b.bucket),y:w.map(b=>b.avg_energy),name:'Avg energy (Wh)',yaxis:'y2'}],{...lay('Weather impact by wind strength','Time (s)',''),barmode:'group',yaxis2:{overlaying:'y',side:'right',title:'Energy (Wh)',gridcolor:'#1a2a46'}},cfg)}
+  bar('r3','Controller performance: RMS tilt per drone',x,D.map(d=>r.controller_rms_tilt_deg[d.id]||0),'RMS tilt (°)',c)}
+ $('#ak').innerHTML=K.map(([p,q])=>card(p,q)).join('')}
+function render(){renderSide();renderFleetTbl();drawMain();
+ if(view=='missions'&&QS&&$('#mq'))$('#mq').innerHTML=`<table><tr><th>Drone</th><th>State</th><th>Current</th><th>Queued</th></tr>${OV.drones.map((d,i)=>`<tr><td style="color:${d.color}">Drone ${i+1}</td><td>${d.state}</td><td>${d.mission?'#'+d.mission.id+' → '+d.mission.deliver_name:'–'}</td><td>${(QS[d.id]||[]).map(m=>'#'+m.id+(m.priority!='standard'?' ('+m.priority+')':'')).join(', ')||'–'}</td></tr>`).join('')}</table>`;
+ if(view=='wx'&&$('#wi')){const w=OV.weather;$('#wi').textContent=`Live: wind ${w.wind_kmh} km/h, speed modifier ${(+w.speed_mod).toFixed(2)}, battery drain ×${(+w.batt_mod).toFixed(2)}${w.is_dangerous?' · DANGEROUS, flights suspended':''}`}
+ if(view=='drone')renderDrone();else{renderBot();if(view=='ana')renderAna();if(view=='traj'&&mode=='cmp'){if(!CMP)loadCmp();else renderCmp()}}}
+/* ---------- controller comparison: four graphs (PID, MPC, Open-Loop, LQR), six drones each ---------- */
+const CK=[['PID','Graph 1 — PID Controller'],['MPC','Graph 2 — MPC Controller'],['OPEN_LOOP','Graph 3 — Open-Loop Controller'],['LQR','Graph 4 — LQR Controller']],CORD=['OPEN_LOOP','PID','MPC','LQR'],D6=['#38bdf8','#4ade80','#f87171','#fb923c','#a78bfa','#facc15'];
+let CTL=null,CTLT=null;
+P.ctl=()=>`<h3>Controller comparison — six drones per controller</h3>
+<div class="row">Duration <input id="cd" value="40"> s &nbsp;Seed <input id="cs" value="7"> &nbsp;Wind &times; <input id="cw" value="1">
+<button id="crun" onclick="ctlRun()">Run comparison</button><button onclick="ctlPlay()">Start (replay)</button><button onclick="ctlReset()">Reset</button><button onclick="$('#cs').value=Math.floor(Math.random()*9999);ctlRun()">Random seed + run</button>
+<label><input type="checkbox" id="csh" checked onchange="ctlDraw()"> Same Y-scale on all graphs</label><button onclick="ctlCsv()">CSV (24 rows)</button></div>
+<div id="cst" class="mu"></div><div class="g2">${CK.map(([k])=>`<div id="cg_${k}"></div>`).join('')}</div><div id="cres"></div>`;
+const cf=(v,d=3)=>v==null||isNaN(v)?'n/a':(+v).toFixed(d);
+function ctlStop(){clearInterval(CTLT);CTLT=null}
+function ctlInit(){CTL?ctlDraw():ctlBlank()}
+function ctlBlank(){CK.forEach(([k])=>{const e=$('#cg_'+k);if(e){Plotly.purge(e);e.innerHTML='<p class="mu">No data yet. Press "Run comparison" (runs the real simulation on the backend).</p>'}})}
+function ctlReset(){ctlStop();CTL=null;if($('#cres'))$('#cres').innerHTML='';if($('#cst'))$('#cst').textContent='';ctlBlank()}
+async function ctlRun(){const g=i=>+$('#'+i).value,b=$('#crun');ctlStop();b.disabled=true;$('#cst').textContent='Simulating 4 controllers × 6 drones on the backend…';
+ try{CTL=await api('/api/v6/controllers/run',{duration:g('cd'),seed:g('cs'),wind:g('cw')});$('#cd').value=CTL.duration;$('#cs').value=CTL.seed;$('#cw').value=CTL.wind_scale;ctlDraw();
+  const V=CTL.validation,okAll=Object.values(V).every(v=>v.ok);$('#cst').innerHTML=`Done. Validation: ${CK.map(([k])=>`${CTL.graphs[k].label} = ${V[k].traces} traces ${V[k].ok?'✔':'✘'}`).join(' · ')}${okAll?'':' <b style="color:var(--bad)">VALIDATION FAILED</b>'}`}
+ catch(e){$('#cst').textContent='Error: '+e.message}b.disabled=false}
+function ctlPlay(){if(!CTL)return toast('Run the comparison first');ctlStop();const n=CTL.t.length,st=Math.max(2,Math.round(n/80));let i=2;CTLT=setInterval(()=>{i+=st;if(i>=n){ctlStop();ctlDraw();return}ctlDraw(i)},120)}
+function ctlDraw(upto){if(!CTL)return;if(!$('#cg_PID')){ctlStop();return}const n=upto||CTL.t.length,t=CTL.t.slice(0,n),sh=$('#csh')&&$('#csh').checked,
+ mx=sh?Math.max(...CORD.map(k=>Math.max(...CTL.graphs[k].traces.map(r=>Math.max(...r.err)))))*1.05:null;
+ CK.forEach(([k,ti])=>{const ph=$('#cg_'+k);if(ph&&ph.querySelector('p.mu'))ph.innerHTML='';const tr=CTL.graphs[k].traces.map((r,i)=>({x:t,y:r.err.slice(0,n),name:r.name,mode:'lines',line:{color:D6[i],width:1.5},hovertemplate:`${r.name}<br>t = %{x:.1f} s<br>error = %{y:.3f} m<extra></extra>`})),
+  L=lay(ti+' · 6 drones','Tracking error (m)');L.xaxis.range=[0,CTL.duration];L.yaxis.rangemode='tozero';if(mx)L.yaxis.range=[0,mx];L.margin.b=80;L.legend.y=-.4;L.uirevision=undefined;Plotly.react('cg_'+k,tr,L,cfg)});
+ if(!upto)ctlTables()}
+function ctlTables(){const S=Object.fromEntries(CTL.summary.map(r=>[r.key,r])),rk=[...CTL.summary].sort((a,b)=>b.score-a.score).map(r=>r.key),C=CTL.conditions,
+ st=r=>(r.mean_settling==null?'never settled':cf(r.mean_settling,1))+` (${r.settled} settled)`,
+ sum=tbl(['Controller','Mean RMSE (m)','Mean MAE (m)','Worst-Case RMSE (m)','Mean Settling Time (s)','Mean Computation Time (ms)','Mean Control Effort (m/s²)','Constraint Violations','Score /100','Rank'],
+  CORD.map(k=>{const r=S[k];return[r.controller,cf(r.mean_rmse),cf(r.mean_mae),cf(r.worst_rmse),st(r),cf(r.mean_comp_ms,4),cf(r.mean_effort,2),r.violations,r.score,'#'+(rk.indexOf(k)+1)]}),''),
+ det=tbl(['Controller','Drone','RMSE (m)','MAE (m)','Max error (m)','Settling (s)','Control effort (m/s²)','Comp. time (ms)','Violations'],CTL.detail.map(d=>[d.controller,d.drone,cf(d.rmse),cf(d.mae),cf(d.max_err),d.settling_s==null?'never':cf(d.settling_s,1),cf(d.effort,2),cf(d.comp_ms,4),d.violations]),''),
+ pos=CTL.improvements.filter(i=>i.claim).map(i=>`<li>${CTL.best} vs ${i.vs}: <b>${i.pct}%</b> lower mean RMSE</li>`).join(''),
+ mp=CTL.mpc_vs.map(i=>`<li>${i.improved?`MPC vs ${i.vs}: <b>${i.pct}%</b> lower mean RMSE`:`MPC vs ${i.vs}: no improvement (${i.vs} has lower mean RMSE)`}</li>`).join(''),
+ W=CTL.criteria.weights;
+ $('#cres').innerHTML=`<h3>Controller comparison table (mean over six drones)</h3><div class="sc">${sum}</div>
+<h3>Result</h3><div class="k"><div><span class="mu">Best-performing controller</span><b style="color:var(--ok)">${CTL.best}</b></div><div><span class="mu">Lowest mean RMSE</span><b>${CTL.rmse_best}</b></div></div>
+<p>${CTL.best_text}</p><b>RMSE improvement of ${CTL.best} (formula: (Other − ${CTL.best}) / Other × 100):</b><ul>${pos||'<li>none</li>'}</ul><b>MPC, as requested:</b><ul>${mp}</ul>
+<p class="mu"><b>Ranking criteria</b> (weights): tracking RMSE ${W.mean_rmse*100}%, settling time ${W.mean_settling_eff*100}%, control effort ${W.mean_effort*100}%, computation time ${W.mean_comp_ms*100}%, constraint violations ${W.violations*100}%. ${CTL.criteria.note}</p>
+<p class="mu">Test conditions (identical for every controller): dt = ${C.dt} s, ${C.steps} steps, seed ${C.seed}, wind ×${C.wind_scale}, settling band ±${C.settle_band_m} m, plant lag τ = ${C.plant.tau_s} s with ${Math.round((1-C.plant.gain)*100)}% unmodelled thrust loss, same start/goal and wind for each drone number. Control effort = mean |Δ velocity command| / dt. Violations = steps where the commanded acceleration exceeded the plant limit or altitude went below ground.</p>
+<h3>Detailed results (one row per drone per controller)</h3><div class="sc">${det}</div>`}
+function ctlCsv(){if(!CTL)return toast('Run the comparison first');const h=['controller','drone','rmse_m','mae_m','max_error_m','settling_s','control_effort','comp_ms','violations'];
+ dl('data:text/csv;charset=utf-8,'+encodeURIComponent([h,...CTL.detail.map(d=>[d.controller,d.drone,d.rmse,d.mae,d.max_err,d.settling_s==null?'':d.settling_s,d.effort,d.comp_ms,d.violations])].map(r=>r.join(',')).join('\n')),'controller_comparison.csv')}
+/* ---------- live polling (backend only) ---------- */
+let busy=false,timer=null;
+async function poll(){if(busy)return;busy=true;try{OV=await api('/api/v6/overview');if(!sel||!OV.drones.find(d=>d.id==sel))sel=OV.drones[0]&&OV.drones[0].id;
+  const need=sel&&(view=='drone'||view=='missions'||(view=='traj'&&mode=='replan')||(['fleet','traj'].includes(view)&&['pos','vel','acc','att'].includes(tab)));
+  if(need)DET=await api('/api/v6/drone/'+sel+'/detail');
+  if(view=='traj'&&mode=='fleet')FT=await api('/api/v6/fleet/trajectories');
+  if(view=='missions')QS=await api('/api/v6/queue');
+  if(view=='ana'||tab=='ana')FA=await api('/api/v6/fleet/analytics');
+  if(view=='ana'&&asub=='res')RA=await api('/api/v6/research/analytics');
+  $('#st').textContent=`● live · ${OV.drones.length} drones · ${OV.drones.filter(d=>d.state!='IDLE'&&d.state!='LANDED').length} active`;$('#st').className='';$('#err').style.display='none';render()}
+ catch(e){$('#st').textContent='● offline';$('#st').className='bad';$('#err').style.display='';$('#err').innerHTML=`Cannot reach the SkyLogix backend at <b>${B||location.origin}</b> (${e.message}). Start <code>python flask_server_v6.py</code> or set the URL in Settings. No data is shown until the backend responds.`}
+ busy=false}
+const restart=()=>{clearInterval(timer);timer=setInterval(poll,POLL)};
+function fs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+setTab('pos');show('fleet');restart();
+if(self!==top){const l=document.querySelector('#top a');if(l)l.style.display='none'}
+if(location.hash==='#ctl')show('ctl');
+</script></body></html>
